@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ "$(ls ${1}/*.tgz ${1}/*.tar ${1}/*.tar.gz 2> /dev/null)" != "" ]; then
+  echo "heroku-buildpack-tarmodules"
+  exit 0
+fi
+
+exit 1

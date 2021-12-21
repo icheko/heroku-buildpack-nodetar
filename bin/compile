@@ -1,0 +1,46 @@
+#!/bin/bash
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+PACKAGE_JSON="${BUILD_DIR}/package.json"
+
+indent(){
+  sed -u 's/^/       /'
+}
+
+untar(){
+  FILE=$1
+  PACKAGE=$2
+  PACKAGE_VERSION=$3
+
+  echo ""
+  echo "Package: ${PACKAGE}"
+  echo "------------------------------------------"
+  mkdir -p ${BUILD_DIR}/tar_modules/${PACKAGE_VERSION}
+  tar -xf ${FILE} --strip-components=1 -C ${BUILD_DIR}/tar_modules/${PACKAGE_VERSION}
+  ls -al ${BUILD_DIR}/tar_modules/${PACKAGE_VERSION}
+}
+
+update_json(){
+  PACKAGE=$1
+  PACKAGE_VERSION=$2
+
+  echo ""
+  echo "Update package.json"
+  echo "------------------------------------------"
+  sed -i "s|.${PACKAGE}.:.*|\"${PACKAGE}\": \"file:tar_modules/${PACKAGE_VERSION}\"|g" ${PACKAGE_JSON}
+  cat ${PACKAGE_JSON}
+  echo ""
+}
+
+for file in $(ls ${BUILD_DIR}/*.tgz ${BUILD_DIR}/*.tar ${BUILD_DIR}/*.tar.gz 2> /dev/null); do
+  # echo "$file"
+  [ -f "$file" ] || continue
+  
+  echo ""
+  echo "Processing file $file"
+  PACKAGE_VERSION=`basename "${file}" | sed 's/\.tar//g' | sed 's/\.gz//g' | sed 's/\.tgz//g'`
+  PACKAGE=`echo ${PACKAGE_VERSION} | sed 's/-[0-9].*//'`
+  untar "${file}" "${PACKAGE}" "${PACKAGE_VERSION}" | indent
+  update_json "${PACKAGE}" "${PACKAGE_VERSION}" | indent
+done | indent
